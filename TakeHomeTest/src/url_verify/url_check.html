@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+table {
+width: 50%;
+}
+table, th, td {
+border: 1px solid black;
+border-collapse: collapse;
+background-color :  #deeaee;
+text-align: center;
+}
+</style>
+<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+<title>URL Verify</title>
+<h1> Please Enter URL </h1>
+</head>
+<body>
+    <form action="/add_url" method="post">
+          Check:<input type="text" name="check" id = "check_ip_id">
+		  <input type="submit" value="Go" id = "check_btn_id" >
+		  <br><br>
+		  <table id = "url_table_id">
+		  <thead>
+		  <tr>
+			<th>S.No</th>
+			<th>URL</th>
+			<th>Status</th>
+			<th>Actions</th>
+		  </tr>	
+		</thead>		  
+		</table>
+    </form>	
+</body>
+</html>
+
+<script>
+$("#check_btn_id").click(function(event){
+event.preventDefault();
+var value = $("#check_ip_id").val();
+if(!value)
+{
+	alert("No Input");
+	return;
+}
+$.ajax({
+
+        url:  'http://localhost:9090/add_url',
+        type: 'post',
+        dataType: 'json',
+        data : { check: value},
+        success : function(data) {	
+             //var status = JSON.parse(data)	
+             if(data == "Valid URL"){
+			 location.reload();
+			 }
+		    else
+			{
+			  alert(data);
+			  return;
+			}			
+			     }
+});
+});
+
+$(document).on('click','#del_url_',function(event)
+{
+  event.preventDefault();
+  var value = $(this).find('input:hidden[name=hid_ip]').val();
+	  $.ajax({
+
+			url:  'http://localhost:9090/delete_url',
+			type: 'post',
+			dataType: 'text',
+			data : { del_line: value},
+			success : function(data) {
+			alert(data);
+				  location.reload();
+					 }
+	});  
+});
+
+
+$(document).ready(function() {
+setInterval(periodic_call,300000);
+});
+
+function periodic_call()
+{	
+	fetch("/get_urls")
+		  .then(response => response.json())
+		  .then(urlList => {
+			//Once we fetch the list, we iterate over it
+			var num = 0;
+			urlList.forEach(url => {
+			  num++			  
+			  url_status_id = "url-status_col_" + num			  
+			  document.getElementById(url_status_id).innerHTML = url.Status;			  
+			});
+		  });
+}
+
+$(function()
+{
+	urlTable = document.querySelector("table")
+	urlTBody = document.createElement("tbody")
+	//var img = document.createElement('img');
+	//var image1 = $('<img />').attr('src', 'cross.jpg');
+	//img = "<img src='images/cross.jpg' />";
+	 
+	$('#url_table_id tbody').html('');
+	fetch("/get_urls")
+		  .then(response => response.json())
+		  .then(urlList => {
+			//Once we fetch the list, we iterate over it
+			var num = 0;
+			urlList.forEach(url => {
+			  // Create the table row
+			  row = document.createElement("tr")			  
+			  id = document.createElement("td")
+			  //id.text-align = "center"
+			  id.innerHTML = ++num
+			  
+			  url_name = document.createElement("td")
+			  url_name.innerHTML = url.URL	  
+			  
+			  
+			  url_status = document.createElement("td")
+			  url_status.id = "url-status_col_" + num			  			  
+			  url_status.innerHTML = url.Status
+			  url_status.setAttribute('background-color',"#405d27")
+			  // Delete button
+			  var btn = document.createElement("BUTTON");        // Create a <button> element
+			  var t = document.createTextNode("Delete");       // Create a text node
+			  btn.id = "del_url_"
+			  var hid_url = document.createElement("INPUT");
+			  hid_url.value = url.URL
+			  hid_url.name = "hid_ip"
+			  hid_url.setAttribute("type", "hidden");
+			  btn.appendChild(hid_url)
+			  btn.appendChild(t)
+			  url_actions = document.createElement("td")
+			  url_actions.id = "url-action_col_" + num
+			  url_actions.appendChild(btn)
+			  // Add the data elements to the row
+			  row.appendChild(id)
+			  row.appendChild(url_name)
+			  row.appendChild(url_status)
+			  row.appendChild(url_actions)
+			  urlTBody.appendChild(row)
+			  // Finally, add the row element to the table itself
+			  urlTable.appendChild(urlTBody)
+			});
+		  });
+});
+</script>
